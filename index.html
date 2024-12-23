@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sudoku</title>
+</head>
+<body>
+    <div id="board"></div>
+    <script src="state.js"></script>
+    <script src="ui.js"></script>
+    <script src="game.js"></script>
+    <style>
+        #board {
+            max-width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .row {
+            display: flex;
+        }
+        .cell {
+            text-align: center;
+            width: 2rem;
+            height: 2rem;
+        }
+        .highlight {
+            background-color: grey;
+        }
+        tr:first-child .cell {
+            border-top: 2px solid black;
+        }   
+        .cell:first-child {
+            border-left: 2px solid black;
+        }
+        .cell:nth-child(3n) {
+            border-right: 2px solid black;
+        }
+        tr:nth-of-type(3n) .cell {
+            border-bottom: 2px solid black;
+        }
+    </style>
+</body>
+</html>
+
