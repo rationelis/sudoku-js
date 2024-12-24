@@ -17,6 +17,7 @@ function generateBoard(width, height) {
         }
         table.appendChild(row);
     }
+
     board.appendChild(table);
 }
 
@@ -29,4 +30,14 @@ function handleCellClick(event) {
     clickedCell.classList.add("highlight");
 
     highlightedCell = clickedCell;
+}
+
+function renderState(state) {
+    for (let i = 0; i < state.getWidth(); i++) {
+        for (let j = 0; j < state.getHeight(); j++) {
+            const cell = document.getElementById(`cell-${i}-${j}`);
+            const value = state.getCell(i, j);
+            cell.textContent = value == 0 ? " " : value;
+        }
+    }
 }

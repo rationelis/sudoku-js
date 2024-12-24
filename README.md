@@ -1,2 +1,2 @@
 # sudoku-js
-Sudoku
+No build-step, pure JS.
