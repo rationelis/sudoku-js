@@ -1,152 +1,190 @@
 function generatePuzzle(state) {
-    let locations = generatePossibleLocation(state);
-    let tries = 0;
+    const locations = generatePossibleLocations(state);
 
     while (locations.length > 0) {
-        if (tries > 150) {
-            break;
-        }
-
         const locationIndex = Math.floor(Math.random() * locations.length);
-        const [row, col] = locations[locationIndex]; 
+        const [row, col] = locations[locationIndex];
 
-        // This should not happen anymore.
-        // if (state.getCell(row, col) !== 0) continue;
-        
-        let numbers = getAvailableNumbers(state, row, col);
-        const newState = state.getSlice();
+        let candidates = getAvailableNumbers(state, row, col);
+        const tempState = state.getSlice();
 
-        while (numbers.length > 0) {
-            const numberIndex = Math.floor(Math.random() * numbers.length);
-            const selectedNumber = numbers[numberIndex];
+        while (candidates.length > 0) {
+            const candidateIndex = Math.floor(Math.random() * candidates.length);
+            const selectedNumber = candidates[candidateIndex];
 
-            newState.setCell(row, col, selectedNumber);
+            tempState.setCell(row, col, selectedNumber);
 
-            if (solve(newState)) {
-                // This is a valid option.
+            if (solve(tempState)) {
+                // Valid placement, update state and proceed
                 state.setCell(row, col, selectedNumber);
                 locations.splice(locationIndex, 1);
-                console.log(`Solvable! ${locations.length} left.`);
                 break;
             } else {
-                // This is not a valid option.
-                newState.setCell(row, col, 0);
-                numbers.splice(numberIndex, 1);
-                console.log(`Unsolvable!`);
+                // Invalid placement, backtrack
+                tempState.setCell(row, col, 0);
+                candidates.splice(candidateIndex, 1);
             }
         }
-        
-        tries++;
+    }
+}
+
+function generatePossibleLocations(state) {
+    const locations = [];
+    for (let row = 0; row < WIDTH; row++) {
+        for (let col = 0; col < HEIGHT; col++) {
+            locations.push([row, col]);
+        }
+    }
+    return locations;
+}
+
+function removeCells(state, n) {
+    let cellsToRemove = n;
+    let locations = shuffle(generatePossibleLocations(state));
+
+    while (cellsToRemove > 0 && locations.length > 0) {
+        const [row, col] = locations.pop();
+        const backupState = state.getSlice();
+
+        backupState.setCell(row, col, 0);
+
+        if (solve(backupState)) {
+            state.setCell(row, col, 0);
+            cellsToRemove--;
+        }
+    }
+}
+
+function getAvailableNumbers(state, row, col) {
+    const possibleNumbers = new Set(
+        Array.from({ length: WIDTH }, (_, i) => i + 1)
+    );
+
+    for (let i = 0; i < WIDTH; i++) {
+        possibleNumbers.delete(state.getCell(row, i)); // Row
+        possibleNumbers.delete(state.getCell(i, col)); // Column
+    }
+
+    const blockRowStart = Math.floor(row / 3) * 3;
+    const blockColStart = Math.floor(col / 3) * 3;
+    for (let i = blockRowStart; i < blockRowStart + 3; i++) {
+        for (let j = blockColStart; j < blockColStart + 3; j++) {
+            possibleNumbers.delete(state.getCell(i, j));
+        }
+    }
+
+    return Array.from(possibleNumbers);
+}
+
+function solve(state) {
+    const candidates = computeInitialCandidates(state);
+
+    function backtrack() {
+        if (candidates.size === 0) return true; // Solved!
+
+        // Find the cell with the fewest candidates
+        const [cell, options] = [...candidates.entries()].reduce((a, b) =>
+            a[1].length < b[1].length ? a : b
+        );
+        const [row, col] = cell.split(",").map(Number);
+
+        for (const num of options) {
+            state.setCell(row, col, num);
+            const affectedCells = updateCandidates(candidates, row, col, num);
+
+            if (backtrack()) return true;
+
+            // Undo changes if not successful
+            state.setCell(row, col, 0);
+            restoreCandidates(candidates, affectedCells);
+        }
+
+        return false;
+    }
+
+    return backtrack();
+}
+
+function computeInitialCandidates(state) {
+    const candidates = new Map();
+
+    for (let row = 0; row < WIDTH; row++) {
+        for (let col = 0; col < HEIGHT; col++) {
+            if (state.getCell(row, col) === 0) {
+                candidates.set(
+                    `${row},${col}`,
+                    getAvailableNumbers(state, row, col)
+                );
+            }
+        }
+    }
+
+    return candidates;
+}
+
+function updateCandidates(candidates, row, col, num) {
+    const affectedCells = [];
+
+    for (const [key, options] of candidates) {
+        const [r, c] = key.split(",").map(Number);
+        if (
+            r === row ||
+            c === col ||
+            (Math.floor(r / 3) === Math.floor(row / 3) &&
+                Math.floor(c / 3) === Math.floor(col / 3))
+        ) {
+            if (options.includes(num)) {
+                options.splice(options.indexOf(num), 1);
+                affectedCells.push([key, num]);
+            }
+        }
+    }
+
+    candidates.delete(`${row},${col}`);
+    return affectedCells;
+}
+
+function restoreCandidates(candidates, affectedCells) {
+    for (const [key, num] of affectedCells) {
+        if (!candidates.has(key)) candidates.set(key, []);
+        candidates.get(key).push(num);
     }
 }
 
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+        [array[i], array[j]] = [array[j], array[i]]; // Swap
     }
     return array;
 }
 
-function removeCells(state, n) {
-    let cellsToRemove = n;
-    let locations = generatePossibleLocation(state);
-
-    locations = shuffle(locations);
-
-    while (cellsToRemove > 0 && locations.length > 0) {
-        const [row, col] = locations.pop(); 
-        const backupState = state.getSlice();
-
-        backupState.setCell(row, col, 0); 
-
-        if (solve(backupState)) {
-            state.setCell(row, col, 0);
-            cellsToRemove--;
-            console.log(`Removed cell (${row}, ${col}). ${cellsToRemove} left to remove.`);
-        } else {
-            console.log(`Could not remove cell (${row}, ${col}) as it made the puzzle unsolvable.`);
-        }
-    }
-}
-
-function generatePossibleLocation(state) {
-    const locations = [];
-    for (let i = 0; i < state.getWidth(); i++) {
-        for (let j = 0; j < state.getHeight(); j++) {
-            locations.push([i, j]);
-        }
-    }
-    return locations;
-}
-
-function getAvailableNumbers(state, row, col) {
-    const available = new Set(Array.from({ length: state.getWidth() }, (_, i) => i + 1));
-
-    // Remove numbers already in the row
-    for (let i = 0; i < state.getWidth(); i++) {
-        available.delete(state.getCell(row, i));
-    }
-
-    // Remove numbers already in the column
-    for (let i = 0; i < state.getHeight(); i++) {
-        available.delete(state.getCell(i, col));
-    }
-
-    // Remove numbers already in the 3x3 block
-    const startRow = Math.floor(row / 3) * 3;
-    const startCol = Math.floor(col / 3) * 3;
-    for (let i = startRow; i < startRow + 3; i++) {
-        for (let j = startCol; j < startCol + 3; j++) {
-            available.delete(state.getCell(i, j));
-        }
-    }
-
-    return Array.from(available);
-}
-
 function isValid(state, row, col, num) {
     // Check row
-    for (let i = 0; i < 9; i++) {
-        if (state.getCell(row, i) === num) {
+    for (let i = 0; i < WIDTH; i++) {
+        if (state.getCell(row, i) == num) {
             return false;
         }
     }
+
     // Check column
-    for (let i = 0; i < 9; i++) {
-        if (state.getCell(i, col) === num) {
+    for (let i = 0; i < HEIGHT; i++) {
+        if (state.getCell(i, col) == num) {
             return false;
         }
     }
+
     // Check 3x3 block
     const startRow = Math.floor(row / 3) * 3;
     const startCol = Math.floor(col / 3) * 3;
     for (let i = startRow; i < startRow + 3; i++) {
         for (let j = startCol; j < startCol + 3; j++) {
-            if (state.getCell(i, j) === num) {
+            if (state.getCell(i, j) == num) {
                 return false;
             }
         }
     }
+
     return true;
 }
 
-function solve(state) {
-    for (let i = 0; i < state.getWidth(); i++) {
-        for (let j = 0; j < state.getHeight(); j++) {
-            if (state.getCell(i, j) == 0) {
-                for (let num = 1; num <= state.getWidth(); num++) {
-                    if (isValid(state, i, j, num)) {
-                        state.setCell(i, j, num);
-                        if (solve(state)) {
-                            return true;
-                        }
-                        state.setCell(i, j, 0);
-                    }
-                }   
-                return false;
-            }
-        }
-    }
-    return true;
-}

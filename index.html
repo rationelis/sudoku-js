@@ -4,15 +4,20 @@
     <title>Sudoku</title>
 </head>
 <body>
+    <div id="buttons"></div>
+    <hr>
     <div id="board"></div>
-    <script src="ui.js"></script>
     <script src="puzzle.js"></script>
+    <script src="highlighting.js"></script>
     <script src="main.js"></script>
     <style>
-        #board {
+        #board, #buttons {
             max-width: fit-content;
             margin-left: auto;
             margin-right: auto;
+        }
+        button {
+            margin: 0.1rem;
         }
         .row {
             display: flex;
@@ -21,9 +26,21 @@
             text-align: center;
             width: 2rem;
             height: 2rem;
+            cursor: pointer;
+            user-select: none;
+            border: 1px solid #E0E0E0;
         }
         .highlight {
-            background-color: grey;
+            background-color: #6C757D;
+        }
+        .highlight-secondary {
+            background-color: #ADB5BD;
+        }
+        .highlight-intersect {
+            background-color: #DDE2E6;
+        }
+        .highlight-incorrect {
+            background-color: red !important;
         }
         tr:first-child .cell {
             border-top: 2px solid black;
