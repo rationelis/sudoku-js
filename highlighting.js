@@ -50,6 +50,7 @@ function applyIntersectHighlights(x, y) {
 document.addEventListener("click", function (event) {
     if (!board.contains(event.target)) {
         clearHighlights();
+        renderState(state);
     }
 });
 

@@ -36,7 +36,7 @@ function createState(w, h) {
                 return array.filter(cell => cell.textContent == value);
             },
             isFinished() {
-                return state.every(row => row.every(value => value !== 0));
+                return state.every(row => row.every(value => value != 0));
             },
         };
     }
@@ -115,13 +115,23 @@ function fillInNumber(state, value) {
     state.setCell(x, y, value);
     renderState(state);
 
-    if (isValidPlacement) {
-        state.setCell(x, y, value);
-        handleCellClick(state, highlighted.selected);
-    } else {
+    if (!isValidPlacement) {
         highlighted.selected.classList.add(highlightIncorrect);
         state.setCell(x, y, 0);
+        return;
     }
+
+    const tempState = state.getSlice();
+
+    const isSolvable = solve(tempState);
+
+    if (!isSolvable) {
+        highlighted.selected.classList.add(highlightIncorrect);
+        state.setCell(x, y, 0);
+        return;
+    }
+
+    handleCellClick(state, highlighted.selected);
 
     if (state.isFinished()) {
         setTimeout(() => {

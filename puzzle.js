@@ -28,7 +28,7 @@ function generatePuzzle(state) {
     }
 }
 
-function generatePossibleLocations(state) {
+function generatePossibleLocations() {
     const locations = [];
     for (let row = 0; row < WIDTH; row++) {
         for (let col = 0; col < HEIGHT; col++) {
@@ -110,7 +110,7 @@ function computeInitialCandidates(state) {
 
     for (let row = 0; row < WIDTH; row++) {
         for (let col = 0; col < HEIGHT; col++) {
-            if (state.getCell(row, col) === 0) {
+            if (state.getCell(row, col) == 0) {
                 candidates.set(
                     `${row},${col}`,
                     getAvailableNumbers(state, row, col)
